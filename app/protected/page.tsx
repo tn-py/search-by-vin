@@ -99,14 +99,12 @@ const VINSearchComponent = () => {
                 maxLength={17}
               />
             </div>
+            <Button className="w-full" type="submit" disabled={isLoading}>
+              {isLoading ? "Searching..." : "Search"}
+            </Button>
           </div>
         </form>
       </CardContent>
-      <CardFooter>
-        <Button className="w-full" onClick={handleSearch} disabled={isLoading}>
-          {isLoading ? "Searching..." : "Search"}
-        </Button>
-      </CardFooter>
       {vehicleInfo && (
         <CardContent>
           <h3 className="text-lg font-semibold mb-2">Vehicle Information:</h3>
@@ -145,10 +143,10 @@ export default function ProtectedPage() {
   }
 
   return (
-    <div className="flex-1 w-full flex flex-col gap-8 items-center justify-center p-4 bg-gray-50">
+    <div className="flex-1 w-full flex flex-col gap-8 items-center justify-center p-4">
       <div className="text-center">
         <h1 className="text-3xl font-bold mb-2">Welcome to Your Dashboard</h1>
-        <p className="text-xl text-gray-600">Hello, {user.email}!</p>
+        <p className="text-xl">Hello, {user.email}!</p>
       </div>
       <VINSearchComponent />
     </div>
