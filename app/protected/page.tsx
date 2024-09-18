@@ -1,63 +1,125 @@
 "use client";
 
-import { createClient } from "@/utils/supabase/client";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import axios from 'axios';
+import { createClient } from "@/utils/supabase/client";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
 
-const SearchComponent = () => {
-  const [searchText, setSearchText] = useState("");
-  const [year, setYear] = useState("");
-  const [make, setMake] = useState("");
-  const [model, setModel] = useState("");
+interface VehicleInfo {
+  Make?: string;
+  Model?: string;
+  ModelYear?: string;
+  VehicleType?: string;
+  BodyClass?: string;
+  [key: string]: string | undefined;
+}
 
-  const handleSearch = (e: React.FormEvent) => {
+const VINSearchComponent = () => {
+  const [vin, setVin] = useState("");
+  const [vehicleInfo, setVehicleInfo] = useState<VehicleInfo | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Implement search logic here
-    console.log("Searching for:", { searchText, year, make, model });
+    setVehicleInfo(null);
+    setIsLoading(true);
+
+    if (vin.length !== 17) {
+      toast({
+        title: "Invalid VIN",
+        description: "VIN must be 17 characters long.",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    toast({
+      title: "Searching Vehicle Database",
+      description: "Please wait while we fetch the vehicle information.",
+    });
+
+    try {
+      const response = await axios.get(`https://vpic.nhtsa.dot.gov/api/vehicles/decodevin/${vin}?format=json`);
+      const results = response.data.Results;
+      
+      const info: VehicleInfo = {};
+      results.forEach((item: { Variable: string; Value: string }) => {
+        if (item.Value && item.Value !== "Not Applicable") {
+          info[item.Variable] = item.Value;
+        }
+      });
+
+      setVehicleInfo(info);
+      toast({
+        title: "Vehicle Information Found",
+        description: "The vehicle details have been retrieved successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An error occurred while fetching vehicle information.",
+        variant: "destructive",
+      });
+      console.error("Error fetching VIN data:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-2xl">
-      <h2 className="text-xl font-semibold mb-4">Search for Car Keys</h2>
-      <form onSubmit={handleSearch} className="space-y-4">
-        <input
-          type="text"
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
-          placeholder="Search for car keys..."
-          className="w-full p-2 border rounded"
-        />
-        <div className="grid grid-cols-3 gap-4">
-          <select
-            value={year}
-            onChange={(e) => setYear(e.target.value)}
-            className="p-2 border rounded"
-          >
-            <option value="">Select Year</option>
-            {/* Add year options here */}
-          </select>
-          <select
-            value={make}
-            onChange={(e) => setMake(e.target.value)}
-            className="p-2 border rounded"
-          >
-            <option value="">Select Make</option>
-            {/* Add make options here */}
-          </select>
-          <select
-            value={model}
-            onChange={(e) => setModel(e.target.value)}
-            className="p-2 border rounded"
-          >
-            <option value="">Select Model</option>
-            {/* Add model options here */}
-          </select>
-        </div>
-        <button type="submit" className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">
-          Search
-        </button>
-      </form>
-    </div>
+    <Card className="w-[350px]">
+      <CardHeader>
+        <CardTitle>VIN Search</CardTitle>
+        <CardDescription>Enter a VIN to retrieve vehicle information.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSearch}>
+          <div className="grid w-full items-center gap-4">
+            <div className="flex flex-col space-y-1.5">
+              <Label htmlFor="vin">Vehicle Identification Number (VIN)</Label>
+              <Input
+                id="vin"
+                placeholder="Enter 17-character VIN"
+                value={vin}
+                onChange={(e) => setVin(e.target.value.toUpperCase())}
+                maxLength={17}
+              />
+            </div>
+          </div>
+        </form>
+      </CardContent>
+      <CardFooter>
+        <Button className="w-full" onClick={handleSearch} disabled={isLoading}>
+          {isLoading ? "Searching..." : "Search"}
+        </Button>
+      </CardFooter>
+      {vehicleInfo && (
+        <CardContent>
+          <h3 className="text-lg font-semibold mb-2">Vehicle Information:</h3>
+          <ul className="list-disc pl-5">
+            <li>Make: {vehicleInfo.Make || 'N/A'}</li>
+            <li>Model: {vehicleInfo.Model || 'N/A'}</li>
+            <li>Year: {vehicleInfo.ModelYear || 'N/A'}</li>
+            <li>Vehicle Type: {vehicleInfo.VehicleType || 'N/A'}</li>
+            <li>Body Class: {vehicleInfo.BodyClass || 'N/A'}</li>
+          </ul>
+        </CardContent>
+      )}
+    </Card>
   );
 };
 
@@ -75,7 +137,6 @@ export default function ProtectedPage() {
         router.push('/sign-in');
       }
     };
-
     fetchUser();
   }, [router, supabase.auth]);
 
@@ -84,20 +145,12 @@ export default function ProtectedPage() {
   }
 
   return (
-    <div className="flex-1 w-full flex flex-col items-center justify-center">
-      <h1 className="text-3xl font-bold mb-4">Welcome to Your Dashboard</h1>
-      <p className="text-xl mb-8">Hello, {user.email}!</p>
-      <SearchComponent />
-      <div className="grid grid-cols-2 gap-4 mt-8">
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-xl font-semibold mb-2">Quick Stats</h2>
-          <p>Your account was created on: {new Date(user.created_at).toLocaleDateString()}</p>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-xl font-semibold mb-2">Recent Activity</h2>
-          <p>No recent activity to display.</p>
-        </div>
+    <div className="flex-1 w-full flex flex-col gap-8 items-center justify-center p-4 bg-gray-50">
+      <div className="text-center">
+        <h1 className="text-3xl font-bold mb-2">Welcome to Your Dashboard</h1>
+        <p className="text-xl text-gray-600">Hello, {user.email}!</p>
       </div>
+      <VINSearchComponent />
     </div>
   );
 }
