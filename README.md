@@ -1,7 +1,7 @@
 
 # Search by VIN
 
-Search by VIN is a React-based web application that allows users to retrieve vehicle information by entering a Vehicle Identification Number (VIN). This project uses the NHTSA (National Highway Traffic Safety Administration) API to decode VIN numbers and display relevant vehicle details.
+Search by VIN is a Next.js-based web application that allows users to retrieve vehicle information by entering a Vehicle Identification Number (VIN). This project uses the NHTSA (National Highway Traffic Safety Administration) API to decode VIN numbers and display relevant vehicle details.
 
 
 ## Features
@@ -12,7 +12,6 @@ Search by VIN is a React-based web application that allows users to retrieve veh
 
 ## Technologies Used
 - Next.js 14
-- React
 - TypeScript
 - Supabase for authentication
 - shadcn/ui for UI components
