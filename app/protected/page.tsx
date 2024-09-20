@@ -23,11 +23,15 @@ interface VehicleInfo {
   ModelYear?: string;
   VehicleType?: string;
   BodyClass?: string;
-  [key: string]: string | undefined;
+  EngineCylinders?: string;
+  FuelTypePrimary?: string;
+  TransmissionStyle?: string;
+  [key: string]: string | undefined; // To capture any additional fields
 }
 
 const VINSearchComponent = () => {
   const [vin, setVin] = useState("");
+  const [year, setYear] = useState<number | undefined>(undefined);
   const [vehicleInfo, setVehicleInfo] = useState<VehicleInfo | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -53,8 +57,13 @@ const VINSearchComponent = () => {
     });
 
     try {
-      const response = await axios.get(`https://vpic.nhtsa.dot.gov/api/vehicles/decodevin/${vin}?format=json`);
+      const response = await axios.get(
+        `https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinExtended/${vin}?format=json${year ? `&modelyear=${year}` : ''}`
+      );
       const results = response.data.Results;
+      
+      // Log the full response for debugging
+      console.log('Full API Response:', results);
       
       const info: VehicleInfo = {};
       results.forEach((item: { Variable: string; Value: string }) => {
@@ -99,6 +108,16 @@ const VINSearchComponent = () => {
                 maxLength={17}
               />
             </div>
+            <div className="flex flex-col space-y-1.5">
+              <Label htmlFor="year">Model Year (Optional)</Label>
+              <Input
+                id="year"
+                type="number"
+                placeholder="Enter Model Year"
+                value={year || ''}
+                onChange={(e) => setYear(e.target.value ? parseInt(e.target.value) : undefined)}
+              />
+            </div>
             <Button className="w-full" type="submit" disabled={isLoading}>
               {isLoading ? "Searching..." : "Search"}
             </Button>
@@ -114,6 +133,10 @@ const VINSearchComponent = () => {
             <li>Year: {vehicleInfo.ModelYear || 'N/A'}</li>
             <li>Vehicle Type: {vehicleInfo.VehicleType || 'N/A'}</li>
             <li>Body Class: {vehicleInfo.BodyClass || 'N/A'}</li>
+            <li>Engine Cylinders: {vehicleInfo.EngineCylinders || 'N/A'}</li>
+            <li>Fuel Type: {vehicleInfo.FuelTypePrimary || 'N/A'}</li>
+            <li>Transmission Style: {vehicleInfo.TransmissionStyle || 'N/A'}</li>
+            {/* Add more fields here as needed */}
           </ul>
         </CardContent>
       )}
